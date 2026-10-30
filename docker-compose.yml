@@ -1,0 +1,66 @@
+# Majordomo: one command starts everything.   docker compose up -d
+#
+# Builds for whatever machine you run it on (arm64 on the ASUS GX10 or a Mac,
+# amd64 on a typical cloud server). To build and push images for both at once,
+# use docker-bake.hcl (see "Multi-arch images" in the README).
+#
+# Settings come from .env (copy .env.example). Each container only gets the
+# settings it needs: the web container gets no keys at all (SEC-2).
+
+x-common: &common
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  agent:
+    <<: *common
+    image: ${IMAGE_PREFIX:-ghcr.io/stanleyhughes/majordomo}-agent:${IMAGE_TAG:-latest}
+    build:
+      context: ./agent
+    environment:
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GEMINI_VOICE: ${GEMINI_VOICE:-}
+      MAJORDOMO_USER_ADDRESS: ${MAJORDOMO_USER_ADDRESS:-}
+      MAJORDOMO_PERSONA_EXTRA: ${MAJORDOMO_PERSONA_EXTRA:-}
+      MAJORDOMO_MAX_SESSION_MINUTES: ${MAJORDOMO_MAX_SESSION_MINUTES:-60}
+    # Outbound only (LiveKit and Gemini), so no ports are opened.
+
+  backend:
+    <<: *common
+    image: ${IMAGE_PREFIX:-ghcr.io/stanleyhughes/majordomo}-backend:${IMAGE_TAG:-latest}
+    build:
+      context: ./backend
+    environment:
+      MAJORDOMO_MODE: ${MAJORDOMO_MODE:-personal}
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      TOKEN_TTL_SECONDS: ${TOKEN_TTL_SECONDS:-600}
+      MAJORDOMO_ACCESS_CODE: ${MAJORDOMO_ACCESS_CODE:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+    # Not published on the host: only the web container can reach it.
+    expose: ["8000"]
+
+  web:
+    <<: *common
+    image: ${IMAGE_PREFIX:-ghcr.io/stanleyhughes/majordomo}-web:${IMAGE_TAG:-latest}
+    build:
+      context: ./web
+    depends_on: [backend]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,38 @@
+# Serves the web app and forwards /api to the backend, on one origin.
+#
+# Personal mode: SITE_ADDRESS=":80" (plain HTTP on your own machine or LAN,
+#   or behind a Cloudflare Tunnel that adds HTTPS).
+# Hosted mode:   SITE_ADDRESS="domo.example.com" and Caddy gets and renews a
+#   TLS certificate automatically, redirecting HTTP to HTTPS (SEC-4).
+{
+	admin off
+	servers {
+		# Trust X-Forwarded-Proto from a tunnel (e.g. cloudflared) on a private
+		# network, so the backend knows the visitor used HTTPS.
+		trusted_proxies static private_ranges
+	}
+}
+
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Permissions-Policy "microphone=(self), camera=(self), geolocation=()"
+		Content-Security-Policy "default-src 'self'; connect-src 'self' wss: https:; media-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'"
+		# Browsers ignore HSTS on plain HTTP, so this only takes effect over HTTPS.
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
