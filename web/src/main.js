@@ -195,8 +195,13 @@ function wireRoom(r) {
     const isMe = from.identity === r.localParticipant.identity
       || (trackId && r.localParticipant.trackPublications.has(trackId));
     const li = segmentFor(id, isMe ? 'me' : 'domo');
+    // Domo's words arrive as one stream of small pieces. Your words arrive as a
+    // series of streams for the same segment, each holding the whole sentence so
+    // far. Building the text per stream and replacing handles both.
+    let text = '';
     for await (const chunk of reader) {
-      li.querySelector('.text').textContent += chunk;
+      text += chunk;
+      li.querySelector('.text').textContent = text;
       scrollLog();
     }
   });
@@ -241,8 +246,22 @@ function animate() {
 
 ui.talk.addEventListener('click', async () => {
   if (!room) return connect();
+  const turningOff = micOn;
   await setMic(!micOn);
+  if (turningOff) endTurn();
 });
+
+// Tell Domo you've finished, so it answers right away instead of waiting to
+// hear silence (a muted mic sends nothing, so it would wait forever).
+async function endTurn() {
+  const agent = [...(room?.remoteParticipants.values() ?? [])].find((p) => p.isAgent);
+  if (!agent) return;
+  try {
+    await room.localParticipant.performRpc({ destinationIdentity: agent.identity, method: 'end_turn', payload: '' });
+  } catch (err) {
+    console.warn('end_turn failed', err);
+  }
+}
 
 ui.hangup.addEventListener('click', () => disconnect());
 

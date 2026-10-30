@@ -83,6 +83,13 @@ docker compose up -d --build
 
 Open **http://localhost:8080**, tap the button, allow the microphone, and say hello.
 
+To update to the latest version later:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
 Useful commands:
 
 ```bash
@@ -151,6 +158,7 @@ All settings live in `.env`. The main ones:
 | `GEMINI_VOICE` | Voice name, e.g. `Charon` (default), `Puck`, `Kore`, `Fenrir`, `Aoede` |
 | `GEMINI_MODEL` | Gemini Live model; blank uses the default in `agent/majordomo_agent/config.py` |
 | `MAJORDOMO_PERSONA_EXTRA` | Extra instructions appended to Domo's persona |
+| `MAJORDOMO_SILENCE_MS` | How long a pause means you've finished speaking, default 600 |
 | `MAJORDOMO_MAX_SESSION_MINUTES` | Ends a conversation after this long (cost guard), default 60 |
 | `TOKEN_TTL_SECONDS` | How long a join token is valid, default 600 |
 | `MAJORDOMO_ACCESS_CODE` | Hosted mode: the code visitors must enter |

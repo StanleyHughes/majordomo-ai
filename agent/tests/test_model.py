@@ -9,3 +9,6 @@ def test_gemini_live_has_resumption_and_compression(monkeypatch):
     assert opts.session_resumption is not None
     assert opts.context_window_compression.sliding_window is not None
     assert opts.voice == "Charon"
+    vad = opts.realtime_input_config.automatic_activity_detection
+    assert vad.silence_duration_ms == 600
+    assert vad.disabled is not True
