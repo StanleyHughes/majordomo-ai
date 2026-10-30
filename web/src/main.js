@@ -16,9 +16,12 @@ const ui = {
   hangup: $('hangup'),
   access: $('access'),
   accessCode: $('access-code'),
+  micSelect: $('mic-select'),
+  micLevel: $('mic-level'),
 };
 
 const ACCESS_KEY = 'majordomo.accessCode';
+const MIC_KEY = 'majordomo.micId';
 let room = null;
 let connecting = false;
 let micOn = false;
@@ -139,8 +142,13 @@ async function disconnect() {
 async function setMic(on) {
   if (!room) return;
   try {
-    await room.localParticipant.setMicrophoneEnabled(on, { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
+    const micId = getSavedMic();
+    await room.localParticipant.setMicrophoneEnabled(on, {
+      echoCancellation: true, noiseSuppression: true, autoGainControl: true,
+      ...(micId ? { deviceId: micId } : {}),
+    });
     micOn = on;
+    if (on) listMics(); // labels only show once mic permission is granted
   } catch (err) {
     micOn = false;
     showError(friendlyError(err));
@@ -230,6 +238,36 @@ function scrollLog() {
   ui.log.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' });
 }
 
+// ---------- microphone choice (helps when a Mac has several inputs) ----------
+
+function getSavedMic() {
+  try { return localStorage.getItem(MIC_KEY) || ''; } catch { return ''; }
+}
+
+async function listMics() {
+  try {
+    const mics = await Room.getLocalDevices('audioinput', false);
+    const saved = getSavedMic();
+    ui.micSelect.replaceChildren(new Option('Default microphone', ''));
+    for (const m of mics) {
+      if (!m.deviceId || m.deviceId === 'default') continue;
+      ui.micSelect.add(new Option(m.label || 'Microphone', m.deviceId, false, m.deviceId === saved));
+    }
+  } catch (err) {
+    console.warn('could not list microphones', err);
+  }
+}
+
+ui.micSelect.addEventListener('change', async () => {
+  const id = ui.micSelect.value;
+  try { localStorage.setItem(MIC_KEY, id); } catch { /* private mode */ }
+  if (room && id) {
+    try { await room.switchActiveDevice('audioinput', id); } catch (err) { showError(friendlyError(err)); }
+  }
+});
+
+navigator.mediaDevices?.addEventListener?.('devicechange', listMics);
+
 // ---------- visualizer: the ring follows Domo's voice ----------
 
 function animate() {
@@ -239,6 +277,9 @@ function animate() {
     if (micOn) level = Math.max(level, room.localParticipant.audioLevel * 0.6);
   }
   ui.talk.style.setProperty('--level', level.toFixed(3));
+  // Your own mic level: if this bar doesn't move when you talk, Domo can't hear you.
+  const mine = room && micOn ? room.localParticipant.audioLevel : 0;
+  ui.micLevel.style.width = `${Math.min(100, Math.round(Math.sqrt(mine) * 140))}%`;
   requestAnimationFrame(animate);
 }
 
@@ -291,5 +332,6 @@ window.addEventListener('offline', () => showError("You're offline. Domo will re
 window.addEventListener('online', () => showError(''));
 
 render();
+listMics();
 checkBackend();
 requestAnimationFrame(animate);

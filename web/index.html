@@ -24,6 +24,11 @@
         </button>
         <p id="hint" class="hint">Tap once to start talking, and again to stop.</p>
         <p id="error" class="error" role="alert" hidden></p>
+        <div class="mic-row">
+          <label for="mic-select">Mic</label>
+          <select id="mic-select" aria-label="Microphone"><option value="">Default microphone</option></select>
+          <span class="meter" aria-hidden="true"><span id="mic-level"></span></span>
+        </div>
       </section>
 
       <form id="access" class="access" hidden>
