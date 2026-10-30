@@ -12,6 +12,7 @@ import sys
 
 from dotenv import load_dotenv
 from google.genai import types
+from livekit import rtc
 from livekit.agents import Agent, AgentServer, AgentSession, JobContext, cli, room_io
 from livekit.plugins import google
 
@@ -47,6 +48,14 @@ def build_model(s: AgentSettings) -> google.realtime.RealtimeModel:
         # Transcripts of both sides go to the web client (FR-4).
         input_audio_transcription=types.AudioTranscriptionConfig(),
         output_audio_transcription=types.AudioTranscriptionConfig(),
+        # Gemini decides when you've finished speaking. The defaults can wait
+        # forever if there's steady background noise, so end turns more readily.
+        realtime_input_config=types.RealtimeInputConfig(
+            automatic_activity_detection=types.AutomaticActivityDetection(
+                end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_HIGH,
+                silence_duration_ms=s.silence_ms,
+            )
+        ),
     )
 
 
@@ -88,6 +97,17 @@ async def entrypoint(ctx: JobContext) -> None:
             delete_room_on_close=True,
         ),
     )
+
+    @ctx.room.local_participant.register_rpc_method("end_turn")
+    async def end_turn(_data: rtc.RpcInvocationData) -> str:
+        """The user tapped to stop talking. If Domo hasn't started answering yet,
+        tell Gemini the turn is over instead of waiting for it to notice silence
+        (a muted mic sends no audio at all, so it would never notice)."""
+        if session.agent_state == "listening":
+            log.info("user ended turn; asking for a reply")
+            session.generate_reply()
+            return "replying"
+        return "busy"
 
     limiter = asyncio.create_task(_end_after(session, settings.max_session_minutes))
 

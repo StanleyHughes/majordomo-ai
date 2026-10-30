@@ -17,6 +17,7 @@ class AgentSettings:
     user_address: str
     max_session_minutes: int
     persona_extra: str
+    silence_ms: int
 
     @classmethod
     def from_env(cls, env: dict[str, str] | None = None) -> AgentSettings:
@@ -30,6 +31,11 @@ class AgentSettings:
         except ValueError:
             max_minutes = 60
 
+        try:
+            silence_ms = int(get("MAJORDOMO_SILENCE_MS", "600"))
+        except ValueError:
+            silence_ms = 600
+
         return cls(
             agent_name=get("MAJORDOMO_AGENT_NAME", "majordomo"),
             gemini_model=get("GEMINI_MODEL", DEFAULT_MODEL),
@@ -37,6 +43,7 @@ class AgentSettings:
             user_address=get("MAJORDOMO_USER_ADDRESS"),
             max_session_minutes=max(1, max_minutes),
             persona_extra=get("MAJORDOMO_PERSONA_EXTRA"),
+            silence_ms=max(200, min(3000, silence_ms)),
         )
 
 
