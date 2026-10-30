@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures with fake keys"
+paths = ['''backend/tests/.*''']

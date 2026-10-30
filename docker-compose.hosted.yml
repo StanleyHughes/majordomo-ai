@@ -1,0 +1,10 @@
+# Hosted mode on a server with a public address and a domain name.
+#   docker compose -f docker-compose.yml -f docker-compose.hosted.yml up -d
+# Set SITE_ADDRESS=your.domain in .env and point the domain's DNS at the server.
+# Caddy then gets a TLS certificate and redirects HTTP to HTTPS (SEC-4).
+services:
+  web:
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"

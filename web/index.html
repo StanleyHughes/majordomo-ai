@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="description" content="Majordomo, your AI voice assistant." />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <title>Majordomo</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="top">
+        <h1>Majordomo</h1>
+        <span id="status" class="status" role="status" aria-live="polite">Not connected</span>
+      </header>
+
+      <section class="stage">
+        <button id="talk" class="orb" data-state="idle" aria-pressed="false">
+          <span class="ring" aria-hidden="true"></span>
+          <span id="talk-label" class="orb-label">Tap to talk</span>
+        </button>
+        <p id="hint" class="hint">Tap once to start talking, and again to stop.</p>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+
+      <form id="access" class="access" hidden>
+        <label for="access-code">Access code</label>
+        <input id="access-code" type="password" autocomplete="current-password" required />
+        <button type="submit">Save</button>
+      </form>
+
+      <section class="transcript" aria-label="Conversation">
+        <ol id="log"></ol>
+      </section>
+
+      <form id="chat" class="chat">
+        <input id="chat-input" type="text" placeholder="Or type a message…" autocomplete="off" aria-label="Message" disabled />
+        <button type="submit" disabled id="chat-send">Send</button>
+        <button type="button" id="hangup" class="hangup" hidden>End</button>
+      </form>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
