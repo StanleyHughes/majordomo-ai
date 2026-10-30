@@ -98,6 +98,21 @@ async def entrypoint(ctx: JobContext) -> None:
         ),
     )
 
+    # Diagnostics: these lines in `docker compose logs agent` show whether
+    # your voice is reaching Domo and what Gemini heard.
+    @ctx.room.on("track_subscribed")
+    def _on_track(track: rtc.Track, _pub: rtc.RemoteTrackPublication, p: rtc.RemoteParticipant) -> None:
+        log.info("receiving %s from %s", rtc.TrackKind.Name(track.kind), p.identity)
+
+    @session.on("user_input_transcribed")
+    def _on_heard(ev) -> None:
+        if ev.is_final:
+            log.info("heard: %s", ev.transcript)
+
+    @session.on("user_state_changed")
+    def _on_user_state(ev) -> None:
+        log.info("user is %s", ev.new_state)
+
     @ctx.room.local_participant.register_rpc_method("end_turn")
     async def end_turn(_data: rtc.RpcInvocationData) -> str:
         """The user tapped to stop talking. If Domo hasn't started answering yet,

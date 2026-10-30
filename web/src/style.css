@@ -63,3 +63,9 @@ button[type="submit"], .hangup { padding: 12px 16px; border-radius: 10px; border
   background: var(--accent); color: #1d1b16; cursor: pointer; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .hangup { background: var(--danger); color: #fff; }
+
+.mic-row { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; max-width: 100%; }
+.mic-row select { min-width: 0; max-width: 220px; padding: 6px 8px; border-radius: 8px; font: inherit;
+  background: var(--panel); color: var(--text); border: 1px solid color-mix(in srgb, var(--muted) 40%, transparent); }
+.meter { width: 64px; height: 8px; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, var(--muted) 25%, transparent); }
+.meter span { display: block; height: 100%; width: 0; background: var(--accent-2); transition: width 80ms linear; }
