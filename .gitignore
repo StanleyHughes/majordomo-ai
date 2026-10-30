@@ -1,0 +1,51 @@
+# ---- Secrets (SEC-1) ----
+# Never commit real keys. Copy .env.example to .env and fill it in.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.next/
+.vite/
+web/dist/
+
+# ---- Docker ----
+docker-compose.override.yml
+compose.override.yml
+.docker/
+
+# ---- Local data ----
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# ---- Editors / OS ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
