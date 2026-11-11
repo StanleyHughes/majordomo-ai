@@ -64,14 +64,12 @@ class Majordomo(Agent):
         super().__init__(instructions=build_instructions(s.user_address, s.persona_extra))
 
 
-async def _end_after(session: AgentSession, minutes: int) -> None:
-    """Cost guard: politely end sessions that run past the configured limit."""
-    await asyncio.sleep(minutes * 60)
-    log.info("session limit of %s minutes reached; ending", minutes)
+async def _say_goodbye_and_end(session: AgentSession, reason: str) -> None:
+    """Say one short line explaining why the conversation is ending, then end it."""
     try:
         handle = session.generate_reply(
-            instructions="Tell the user, in one short sentence, that the session time limit "
-            "has been reached and they can start a new one by tapping Connect."
+            instructions=f"In one short sentence, tell the user that {reason}, "
+            "and that they can tap to talk to start again."
         )
         await asyncio.wait_for(handle.wait_for_playout(), timeout=15)
     except Exception:  # noqa: BLE001 - ending anyway
@@ -79,10 +77,20 @@ async def _end_after(session: AgentSession, minutes: int) -> None:
     session.shutdown()
 
 
+async def _end_after(session: AgentSession, minutes: int) -> None:
+    """Cost guard: end sessions that run past the configured limit."""
+    await asyncio.sleep(minutes * 60)
+    log.info("session limit of %s minutes reached; ending", minutes)
+    await _say_goodbye_and_end(session, "the session time limit has been reached")
+
+
 @server.rtc_session(agent_name=settings.agent_name)
 async def entrypoint(ctx: JobContext) -> None:
     log.info("joining room %s", ctx.room.name)
-    session = AgentSession(llm=build_model(settings))
+    # Cost guard: LiveKit bills every minute the browser and Domo stay in the
+    # room, even when nobody is talking. After this long with no speech from
+    # either side the user counts as "away" and the conversation ends.
+    session = AgentSession(llm=build_model(settings), user_away_timeout=settings.idle_minutes * 60)
 
     await session.start(
         agent=Majordomo(settings),
@@ -109,9 +117,15 @@ async def entrypoint(ctx: JobContext) -> None:
         if ev.is_final:
             log.info("heard: %s", ev.transcript)
 
+    ending: list[asyncio.Task] = []
+
     @session.on("user_state_changed")
     def _on_user_state(ev) -> None:
         log.info("user is %s", ev.new_state)
+        if ev.new_state == "away" and not ending:
+            log.info("quiet for %s minutes; ending to save LiveKit minutes", settings.idle_minutes)
+            reason = "the conversation has been quiet for a while"
+            ending.append(asyncio.create_task(_say_goodbye_and_end(session, reason)))
 
     @ctx.room.local_participant.register_rpc_method("end_turn")
     async def end_turn(_data: rtc.RpcInvocationData) -> str:

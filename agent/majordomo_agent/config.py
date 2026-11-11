@@ -16,6 +16,7 @@ class AgentSettings:
     gemini_voice: str
     user_address: str
     max_session_minutes: int
+    idle_minutes: float
     persona_extra: str
     silence_ms: int
 
@@ -32,6 +33,11 @@ class AgentSettings:
             max_minutes = 60
 
         try:
+            idle_minutes = float(get("MAJORDOMO_IDLE_MINUTES", "3"))
+        except ValueError:
+            idle_minutes = 3.0
+
+        try:
             silence_ms = int(get("MAJORDOMO_SILENCE_MS", "600"))
         except ValueError:
             silence_ms = 600
@@ -42,6 +48,7 @@ class AgentSettings:
             gemini_voice=get("GEMINI_VOICE", DEFAULT_VOICE),
             user_address=get("MAJORDOMO_USER_ADDRESS"),
             max_session_minutes=max(1, max_minutes),
+            idle_minutes=max(0.5, idle_minutes),
             persona_extra=get("MAJORDOMO_PERSONA_EXTRA"),
             silence_ms=max(200, min(3000, silence_ms)),
         )
