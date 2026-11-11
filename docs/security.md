@@ -57,6 +57,8 @@ Do this **before** anyone other than you uses a hosted instance.
 
 **In Majordomo itself**
 - `MAJORDOMO_MAX_SESSION_MINUTES` (default 60) ends any single conversation after that long.
+- `MAJORDOMO_IDLE_MINUTES` (default 3) ends a conversation once neither side has spoken for
+  that long, because LiveKit bills every connected minute, even silent ones.
 - Rooms close a minute after everyone leaves, so nothing keeps running unattended.
 - Per-user limits and a monthly cap inside Majordomo come in phase 4 (FR-53, NFR-3).
 

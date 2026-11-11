@@ -160,6 +160,7 @@ All settings live in `.env`. The main ones:
 | `MAJORDOMO_PERSONA_EXTRA` | Extra instructions appended to Domo's persona |
 | `MAJORDOMO_SILENCE_MS` | How long a pause means you've finished speaking, default 600 |
 | `MAJORDOMO_MAX_SESSION_MINUTES` | Ends a conversation after this long (cost guard), default 60 |
+| `MAJORDOMO_IDLE_MINUTES` | Ends a conversation after this many quiet minutes (cost guard), default 3 |
 | `TOKEN_TTL_SECONDS` | How long a join token is valid, default 600 |
 | `MAJORDOMO_ACCESS_CODE` | Hosted mode: the code visitors must enter |
 | `WEB_PORT`, `SITE_ADDRESS` | Where the web app listens |
