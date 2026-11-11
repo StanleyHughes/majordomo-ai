@@ -26,6 +26,9 @@ class Settings:
     token_ttl_seconds: int
     access_code: str
     agent_name: str
+    # What the browser connects to. Blank = same as LIVEKIT_URL. "/" = this
+    # web app's own address (LiveKit is reached through Caddy at /rtc).
+    livekit_public_url: str = ""
     allowed_origins: list[str] = field(default_factory=list)
 
     @property
@@ -58,9 +61,14 @@ class Settings:
             access_code=env.get("MAJORDOMO_ACCESS_CODE", "").strip(),
             agent_name=env.get("MAJORDOMO_AGENT_NAME", "majordomo").strip() or "majordomo",
             allowed_origins=_split(env.get("ALLOWED_ORIGINS", "")),
+            livekit_public_url=env.get("LIVEKIT_PUBLIC_URL", "").strip(),
         )
         settings.validate()
         return settings
+
+    @property
+    def browser_livekit_url(self) -> str:
+        return self.livekit_public_url or self.livekit_url
 
     def validate(self) -> None:
         """Refuse to run hosted mode with unsafe settings (SEC-2, SEC-4)."""
@@ -69,8 +77,9 @@ class Settings:
         problems = []
         if len(self.access_code) < 16:
             problems.append("MAJORDOMO_ACCESS_CODE must be set (16+ characters) in hosted mode")
-        if self.livekit_url and not self.livekit_url.startswith("wss://"):
-            problems.append("LIVEKIT_URL must use wss:// in hosted mode")
+        url = self.browser_livekit_url
+        if url and url != "/" and not url.startswith("wss://"):
+            problems.append("LIVEKIT_URL (or LIVEKIT_PUBLIC_URL) must use wss:// in hosted mode")
         for origin in self.allowed_origins:
             if not origin.startswith("https://"):
                 problems.append(f"ALLOWED_ORIGINS entry {origin!r} must use https:// in hosted mode")

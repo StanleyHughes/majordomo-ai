@@ -1,0 +1,59 @@
+# Run everything, including LiveKit itself, on the ASUS GX10 (or any Linux
+# machine) for free, instead of using LiveKit Cloud.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gx10.yml up -d --build
+#
+# Needs two settings in .env (see .env.example):
+#   GX10_IP               the GX10's address on your home network, e.g. 192.168.1.50
+#   LOCAL_LIVEKIT_SECRET  a long random password for your own LiveKit server
+# Your LiveKit Cloud settings in .env are left alone and not used.
+#
+# Then open https://<GX10_IP> on any computer on your home network. The first
+# time, the browser warns about the certificate (Caddy made it itself); choose
+# to continue. HTTPS is needed because browsers only allow the microphone on
+# secure pages.
+
+x-livekit-keys: &livekit-keys
+  LIVEKIT_API_KEY: majordomo-local
+  LIVEKIT_API_SECRET: ${LOCAL_LIVEKIT_SECRET:?Set LOCAL_LIVEKIT_SECRET in .env (see .env.example)}
+
+services:
+  livekit:
+    image: livekit/livekit-server:v1.13.11
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    # LiveKit's own advice for self-hosting: use the machine's network directly,
+    # so audio can flow on ports 7881 (TCP) and 7882 (UDP) without Docker's NAT.
+    network_mode: host
+    command: ["--config", "/etc/livekit.yaml", "--node-ip", "${GX10_IP:?Set GX10_IP in .env (see .env.example)}"]
+    environment:
+      LIVEKIT_KEYS: "majordomo-local: ${LOCAL_LIVEKIT_SECRET:?Set LOCAL_LIVEKIT_SECRET in .env (see .env.example)}"
+    volumes:
+      - ./livekit-config/livekit.yaml:/etc/livekit.yaml:ro
+
+  agent:
+    network_mode: host
+    depends_on: [livekit]
+    environment:
+      <<: *livekit-keys
+      LIVEKIT_URL: ws://127.0.0.1:7880
+
+  backend:
+    environment:
+      <<: *livekit-keys
+      LIVEKIT_URL: ws://127.0.0.1:7880
+      # Tell the browser to reach LiveKit through the web app's own address.
+      LIVEKIT_PUBLIC_URL: /
+
+  web:
+    environment:
+      SITE_ADDRESS: ${GX10_IP:?Set GX10_IP in .env (see .env.example)}
+      DEFAULT_SNI: ${GX10_IP}
+      LIVEKIT_UPSTREAM: host.docker.internal:7880
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports: !override
+      - "80:80"
+      - "443:443"

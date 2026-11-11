@@ -145,7 +145,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         log.info("issued token room=%s identity=%s ttl=%ss", room_name, identity, settings.token_ttl_seconds)
         return TokenResponse(
-            server_url=settings.livekit_url,
+            server_url=settings.browser_livekit_url,
             participant_token=token,
             room_name=room_name,
             expires_in=settings.token_ttl_seconds,

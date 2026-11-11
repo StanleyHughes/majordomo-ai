@@ -116,6 +116,36 @@ and point it at `http://localhost:8080`. No ports need to be opened on your rout
 > test, use hosted mode settings (`MAJORDOMO_MODE=hosted` with an access code) even
 > behind a tunnel.
 
+## Run LiveKit yourself on the GX10 (free)
+
+Instead of LiveKit Cloud, you can run the LiveKit server next to Majordomo on the
+ASUS GX10 (or any Linux machine). There's no LiveKit bill and no monthly minute
+limit. It works for computers and phones on your home network.
+
+1. On the GX10, install Docker if it isn't already there, then clone the repo and
+   create `.env` as in [Personal mode setup](#personal-mode-setup). Add your
+   `GOOGLE_API_KEY`. The LiveKit Cloud lines can stay blank.
+2. Find the GX10's address on your network with `hostname -I` (the first number,
+   e.g. `192.168.1.50`). Ideally, give it a fixed address in your router so it
+   doesn't change.
+3. Add these two lines to `.env`:
+   ```
+   GX10_IP=192.168.1.50
+   LOCAL_LIVEKIT_SECRET=<output of: python3 -c "import secrets; print(secrets.token_urlsafe(32))">
+   ```
+4. Start everything:
+   ```
+   docker compose -f docker-compose.yml -f docker-compose.gx10.yml up -d --build
+   ```
+5. On any computer on your home network, open `https://192.168.1.50` (your
+   GX10_IP). The first time, the browser warns that the connection isn't private,
+   because the certificate was made by the GX10 itself. Click **Advanced** and
+   continue. HTTPS is what lets the browser use your microphone.
+
+Ports used on the GX10: 80 and 443 (web app), 7880 (LiveKit), 7881/TCP and
+7882/UDP (audio). If a firewall is on, allow them from your home network. Don't
+forward them on your router; this setup is meant for your home network only.
+
 ## Hosted mode setup
 
 For a cloud server with a public address and a domain name (e.g. `domo.example.com`).
@@ -164,6 +194,8 @@ All settings live in `.env`. The main ones:
 | `TOKEN_TTL_SECONDS` | How long a join token is valid, default 600 |
 | `MAJORDOMO_ACCESS_CODE` | Hosted mode: the code visitors must enter |
 | `WEB_PORT`, `SITE_ADDRESS` | Where the web app listens |
+| `GX10_IP`, `LOCAL_LIVEKIT_SECRET` | Only for running LiveKit yourself (see above) |
+| `LIVEKIT_PUBLIC_URL` | LiveKit address for the browser, if different from `LIVEKIT_URL`; `/` means through the web app |
 
 Domo's personality is in [`agent/majordomo_agent/persona.py`](agent/majordomo_agent/persona.py).
 

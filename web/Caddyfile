@@ -6,6 +6,12 @@
 #   TLS certificate automatically, redirecting HTTP to HTTPS (SEC-4).
 {
 	admin off
+	# With an IP address as SITE_ADDRESS (e.g. on the GX10), Caddy makes its own
+	# certificate. There's no system trust store to add it to inside the container.
+	skip_install_trust
+	# Browsers don't say which site they want when you type an IP address,
+	# so tell Caddy which certificate to use then.
+	default_sni {$DEFAULT_SNI:localhost}
 	servers {
 		# Trust X-Forwarded-Proto from a tunnel (e.g. cloudflared) on a private
 		# network, so the backend knows the visitor used HTTPS.
@@ -24,6 +30,13 @@
 		# Browsers ignore HSTS on plain HTTP, so this only takes effect over HTTPS.
 		Strict-Transport-Security "max-age=31536000"
 		-Server
+	}
+
+	# Only used when you run LiveKit yourself (docker-compose.gx10.yml): the browser
+	# reaches LiveKit through this same address, so it works over HTTPS.
+	@livekit path /rtc /rtc/*
+	handle @livekit {
+		reverse_proxy {$LIVEKIT_UPSTREAM:livekit:7880}
 	}
 
 	handle /api/* {
