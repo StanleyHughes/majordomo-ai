@@ -2,7 +2,7 @@
 # Both node:22-alpine and caddy:2-alpine are multi-arch (amd64 + arm64).
 # The build stage runs on the build machine's own platform for speed,
 # because its output (static files) is the same for every architecture.
-FROM --platform=$BUILDPLATFORM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine AS build
 WORKDIR /web
 COPY package.json package-lock.json ./
 RUN npm ci --no-fund --no-audit
