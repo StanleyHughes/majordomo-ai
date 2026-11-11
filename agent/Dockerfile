@@ -1,6 +1,6 @@
 # Majordomo voice agent. Multi-arch: python:3.12-slim ships amd64 and arm64,
 # and the LiveKit and Google wheels used here are published for both.
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
