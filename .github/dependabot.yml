@@ -1,0 +1,34 @@
+# Opens a pull request each week when a newer version of a pinned package
+# exists (LiveKit, Gemini plugin, FastAPI, Vite, base images, CI actions).
+# LiveKit packages are grouped so the agent and its plugins move together.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /agent
+    schedule:
+      interval: weekly
+    groups:
+      livekit:
+        patterns: ["livekit*"]
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      livekit:
+        patterns: ["livekit*"]
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      livekit:
+        patterns: ["livekit-client", "@livekit/*"]
+  - package-ecosystem: docker
+    directories: ["/agent", "/backend", "/web"]
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
