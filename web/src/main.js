@@ -106,6 +106,13 @@ async function fetchToken() {
 
 // ---------- LiveKit room ----------
 
+// "/" means LiveKit is reached through this web app's own address (a LiveKit
+// server you run yourself, behind Caddy at /rtc). Otherwise it's a full URL.
+function livekitAddress(url) {
+  if (url !== '/') return url;
+  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
+}
+
 async function connect() {
   if (room || connecting) return;
   connecting = true;
@@ -115,7 +122,7 @@ async function connect() {
     const { server_url, participant_token } = await fetchToken();
     const r = new Room({ adaptiveStream: true, dynacast: true });
     wireRoom(r);
-    await r.connect(server_url, participant_token);
+    await r.connect(livekitAddress(server_url), participant_token);
     await r.startAudio(); // we're inside a tap, so autoplay is allowed
     room = r;
     agentState = 'initializing';

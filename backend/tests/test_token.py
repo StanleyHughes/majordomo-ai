@@ -94,3 +94,18 @@ def test_rate_limit():
     codes = [client.post("/api/token").status_code for _ in range(12)]
     assert codes[:10] == [200] * 10
     assert codes[-1] == 429
+
+
+def test_public_url_overrides_what_the_browser_gets():
+    client = TestClient(create_app(make_settings(LIVEKIT_URL="ws://localhost:7880", LIVEKIT_PUBLIC_URL="/")))
+    assert client.post("/api/token").json()["server_url"] == "/"
+
+
+def test_hosted_mode_accepts_same_origin_livekit():
+    settings = make_settings(
+        MAJORDOMO_MODE="hosted",
+        MAJORDOMO_ACCESS_CODE=CODE,
+        LIVEKIT_URL="ws://localhost:7880",
+        LIVEKIT_PUBLIC_URL="/",
+    )
+    assert settings.browser_livekit_url == "/"

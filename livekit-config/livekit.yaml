@@ -1,0 +1,11 @@
+# Settings for the LiveKit server you run yourself (docker-compose.gx10.yml).
+# The API key and secret come from .env, and the machine's own network
+# address is passed in as --node-ip.
+port: 7880
+rtc:
+  # Audio flows directly between the browser and this machine on these ports.
+  tcp_port: 7881
+  udp_port: 7882
+  use_external_ip: false
+logging:
+  level: info
