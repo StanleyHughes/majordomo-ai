@@ -1,5 +1,5 @@
 # Majordomo token backend. Multi-arch: python:3.12-slim ships amd64 and arm64.
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
